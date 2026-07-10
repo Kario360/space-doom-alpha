@@ -1181,26 +1181,44 @@
   // Music by Alkakrab — Free Shooter Synthwave Music Pack
   // https://alkakrab.itch.io/free-shooter-synthwave-music-pack
   // Licensed for free use including commercial projects.
-  const _trackMenu     = new Audio("Shooter Synthwave 5.mp3");
-  _trackMenu.loop = true; _trackMenu.volume = 0.45; _trackMenu.preload = "auto";
-  const _trackGameplay = new Audio("Shooter Synthwave 1.mp3");
-  _trackGameplay.loop = true; _trackGameplay.volume = 0.55; _trackGameplay.preload = "auto";
-  function _stopAllTracks() {
-    [_trackMenu, _trackGameplay].forEach(t => { t.pause(); t.currentTime = 0; });
+  const _trackMenu = { src: "Shooter Synthwave 5.mp3", volume: 0.45 };
+  const _trackGameplay = { src: "Shooter Synthwave 1.mp3", volume: 0.55 };
+  const _musicPlayer = new Audio(_trackMenu.src);
+  _musicPlayer.loop = true;
+  _musicPlayer.preload = "auto";
+  _musicPlayer.volume = _trackMenu.volume;
+  let _activeTrack = null;
+  function _stopAllTracks(reset = true) {
+    _musicPlayer.pause();
+    if (reset) _musicPlayer.currentTime = 0;
+    _activeTrack = null;
   }
   function _playTrack(track) {
-    _stopAllTracks();
     if (muted) return;
-    track.currentTime = 0;
-    const p = track.play();
-    if (p && p.catch) p.catch((err) => console.warn("Music play blocked:", err && err.message ? err.message : err));
+    if (_activeTrack === track && !_musicPlayer.paused) return;
+    _activeTrack = track;
+    const nextSrc = new URL(track.src, location.href).href;
+    if (_musicPlayer.src !== nextSrc) {
+      _musicPlayer.pause();
+      _musicPlayer.src = track.src;
+      _musicPlayer.currentTime = 0;
+    } else {
+      _musicPlayer.currentTime = 0;
+    }
+    _musicPlayer.volume = track.volume;
+    _musicPlayer.muted = false;
+    const p = _musicPlayer.play();
+    if (p && p.catch) p.catch((err) => {
+      console.warn("Music play blocked:", err && err.message ? err.message : err);
+      _activeTrack = null;
+    });
   }
   function unlockAudio() {
     ac();
     if (actx && actx.state === "suspended") actx.resume();
   }
   function _syncMusicMute() {
-    [_trackMenu, _trackGameplay].forEach(t => { t.muted = muted; });
+    _musicPlayer.muted = muted;
   }
 
   // ---------- Music helpers ----------
@@ -1208,11 +1226,11 @@
   function startMenuMusic()    { _playTrack(_trackMenu); }
   function unlockMenuMusic() {
     unlockAudio();
-    if (state === STATE.MENU && !muted && _trackMenu.paused) startMenuMusic();
+    if (state === STATE.MENU && !muted && (_activeTrack !== _trackMenu || _musicPlayer.paused)) startMenuMusic();
   }
   function startWaveMusic()    { if (!_bossMusicOn) _playTrack(_trackGameplay); }
-  function stopWaveMusic()     { _trackGameplay.pause(); }
-  function startBossMusic()    { /* gameplay track already running — no change needed */ }
+  function stopWaveMusic()     { if (_activeTrack === _trackGameplay) _musicPlayer.pause(); }
+  function startBossMusic()    { /* gameplay track already running - no change needed */ }
   function stopBossMusic()     { _bossMusicOn = false; }
 
   // ---------- Helpers ----------
@@ -6373,6 +6391,7 @@
     musicVol = v;
     _trackMenu.volume = v * 0.9;
     _trackGameplay.volume = v;
+    if (_activeTrack) _musicPlayer.volume = _activeTrack.volume;
     localStorage.setItem("cluck_musicVol", v);
   }
   function applySfxVol(v) {
