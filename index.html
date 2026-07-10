@@ -1182,9 +1182,9 @@
   // https://alkakrab.itch.io/free-shooter-synthwave-music-pack
   // Licensed for free use including commercial projects.
   const _trackMenu     = new Audio("Shooter Synthwave 5.mp3");
-  _trackMenu.loop = true; _trackMenu.volume = 0.45;
+  _trackMenu.loop = true; _trackMenu.volume = 0.45; _trackMenu.preload = "auto";
   const _trackGameplay = new Audio("Shooter Synthwave 1.mp3");
-  _trackGameplay.loop = true; _trackGameplay.volume = 0.55;
+  _trackGameplay.loop = true; _trackGameplay.volume = 0.55; _trackGameplay.preload = "auto";
   function _stopAllTracks() {
     [_trackMenu, _trackGameplay].forEach(t => { t.pause(); t.currentTime = 0; });
   }
@@ -1198,8 +1198,6 @@
   function unlockAudio() {
     ac();
     if (actx && actx.state === "suspended") actx.resume();
-    _trackMenu.load();
-    _trackGameplay.load();
   }
   function _syncMusicMute() {
     [_trackMenu, _trackGameplay].forEach(t => { t.muted = muted; });
@@ -1484,7 +1482,7 @@
     game.enemies.push(game.boss);
     game.intro = { name: def.name, icon: def.icon, color: def.color, t: 150, max: 150 };
     game.flash = { color: def.color, t: 16 };
-    if (def.variant === "guitar") { stopWaveMusic(); startBossMusic(); }   // Desperado's theme
+    if (def.variant === "guitar") startBossMusic();   // keep gameplay music running; no separate boss MP3
   }
 
   // ---------- Spawning effects ----------
