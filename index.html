@@ -850,10 +850,10 @@
   function activateDefaultMenuAction() {
     if (state === STATE.MENU) {
       unlockMenuMusic();
-      if (!document.getElementById("mv-campaign").classList.contains("hidden")) { ac(); start(false); }
-      else if (!document.getElementById("mv-endless").classList.contains("hidden")) { ac(); beginEndless(); }
+      if (!document.getElementById("mv-campaign").classList.contains("hidden")) { unlockAudio(); start(false); }
+      else if (!document.getElementById("mv-endless").classList.contains("hidden")) { unlockAudio(); beginEndless(); }
     } else if (state === STATE.OVER || state === STATE.WIN) {
-      ac(); start(game && game.endless);
+      unlockAudio(); start(game && game.endless);
     } else if (state === STATE.PAUSE) {
       togglePause();
     }
@@ -1192,7 +1192,14 @@
     _stopAllTracks();
     if (muted) return;
     track.currentTime = 0;
-    track.play().catch(() => {});
+    const p = track.play();
+    if (p && p.catch) p.catch((err) => console.warn("Music play blocked:", err && err.message ? err.message : err));
+  }
+  function unlockAudio() {
+    ac();
+    if (actx && actx.state === "suspended") actx.resume();
+    _trackMenu.load();
+    _trackGameplay.load();
   }
   function _syncMusicMute() {
     [_trackMenu, _trackGameplay].forEach(t => { t.muted = muted; });
@@ -1202,8 +1209,7 @@
   let _bossMusicOn = false;
   function startMenuMusic()    { _playTrack(_trackMenu); }
   function unlockMenuMusic() {
-    ac();
-    if (actx && actx.state === "suspended") actx.resume();
+    unlockAudio();
     if (state === STATE.MENU && !muted && _trackMenu.paused) startMenuMusic();
   }
   function startWaveMusic()    { if (!_bossMusicOn) _playTrack(_trackGameplay); }
@@ -6425,18 +6431,18 @@
   document.querySelectorAll("#menu [data-back]").forEach(b =>
     b.onclick = () => { showMenuView("root"); unlockMenuMusic(); });
 
-  document.getElementById("startBtn").onclick   = () => { ac(); clearCheckpoint(); start(false); };
-  document.getElementById("cpContinueBtn").onclick = () => { ac(); startFromCheckpoint(); };
-  document.getElementById("overContinueBtn").onclick = () => { ac(); startFromCheckpoint(); };
-  document.getElementById("endlessBtn").onclick = () => beginEndless();
+  document.getElementById("startBtn").onclick   = () => { unlockAudio(); clearCheckpoint(); start(false); };
+  document.getElementById("cpContinueBtn").onclick = () => { unlockAudio(); startFromCheckpoint(); };
+  document.getElementById("overContinueBtn").onclick = () => { unlockAudio(); startFromCheckpoint(); };
+  document.getElementById("endlessBtn").onclick = () => { unlockAudio(); beginEndless(); };
   document.getElementById("askOk").onclick = () => confirmNameAsk();
   document.getElementById("askName").addEventListener("keydown", e => {
     if (e.code === "Enter") { e.preventDefault(); confirmNameAsk(); }
     else if (e.code === "Escape") { e.preventDefault(); nameAskThen = null; show("menu"); }
   });
   document.getElementById("changeName").onclick = (e) => { e.preventDefault(); ac(); showNameAsk(null); };
-  document.getElementById("againBtn").onclick   = () => start(game.endless);
-  document.getElementById("winBtn").onclick     = () => start(game.endless);
+  document.getElementById("againBtn").onclick   = () => { unlockAudio(); start(game.endless); };
+  document.getElementById("winBtn").onclick     = () => { unlockAudio(); start(game.endless); };
   document.getElementById("resumeBtn").onclick   = () => togglePause();
   document.getElementById("pauseHomeBtn").onclick = () => goHome();
   document.getElementById("overHomeBtn").onclick  = () => goHome();
@@ -6463,10 +6469,10 @@
     if (e.code !== "Enter" && e.code !== "Space") return;
     if (state === STATE.MENU) {
       // only launch from a speed-select sub-view; root just shows the menu
-      if (!document.getElementById("mv-campaign").classList.contains("hidden")) { ac(); start(false); }
-      else if (!document.getElementById("mv-endless").classList.contains("hidden")) { ac(); beginEndless(); }
+      if (!document.getElementById("mv-campaign").classList.contains("hidden")) { unlockAudio(); start(false); }
+      else if (!document.getElementById("mv-endless").classList.contains("hidden")) { unlockAudio(); beginEndless(); }
     } else if (state === STATE.OVER || state === STATE.WIN) {
-      ac(); start(game && game.endless);
+      unlockAudio(); start(game && game.endless);
     }
   });
 
